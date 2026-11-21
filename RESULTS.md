@@ -14,9 +14,9 @@
 | 3 | 该表单提交成功返回 302 → `/login/save-device/?login_source=account_creation`，同时下发 `c_user`+`xs` | ✅ 实测 | 同上 |
 | 4 | Web Comet 的 `CAARegistrationFormDesktopQuery`（doc_id `28589959880637856`）**不需要 lsd**，裸会话直打即通过，服务端会种 `datr` | ✅ 实测 | `fb_reg_protocol.md` §1.1 |
 | 5 | 钱包式密码加密：`#PWD_BROWSER:5:<key_id>:<b64>`，算法是 Curve25519+XSalsa20-Poly1305；公钥在注册页 SSR 数据的 `caa_password_encryption_data` 里，**64 位 hex** | ✅ 实测（往返验证） | `core/web_reg.py::encrypt_password` |
-| 6 | 邮箱确认走 Bloks：`/async/wbloks/fetch/?appid=com.bloks.www.bloks.caa.reg.confirmation.async&type=action`，需要 `fb_dtsg:ver:ts` + `lsd` + `jazoest` + `params`(内嵌 37 字段 reg_info) | 🔶 结构已抓全，参数未对齐 | `BLOKS_CONFIRM.md` |
-| 7 | 补齐 CSRF 三元组后 `1357004` 消失、变成 500 ⇒ **鉴权已通过，卡在 payload 结构** | ✅ 实测 | 同上 |
-| 8 | 会话与出口绑定：换 IP 打开确认页直接 302 到 `/checkpoint/` | ✅ 实测 | `fb_reg_protocol.md` §7 |
+| 6 | 邮箱确认走 Bloks：`/async/wbloks/fetch/?appid=com.bloks.www.bloks.caa.reg.confirmation.async&type=action`；当前 DATA 结构已由纯 DSL 解释器恢复 | ✅ 单次实测 | `BLOKS_CONFIRM.md`、`tools/bloks_dsl_eval.py` |
+| 7 | 当前确认 POST 返回 HTTP 200，但随后只读 `GET /` 302 到 `/checkpoint/…`；邮箱确认成功与否仍未证明 | ✅ 单次实测 | `CHECKPOINT_FINDINGS.md` |
+| 8 | 历史样本中换 IP 后出现 checkpoint，但新的未换出口样本也出现 checkpoint，因此 **IP 因果未建立** | 🔶 相关性 | `fb_reg_protocol.md` §7 |
 | 9 | 老表单接口对 gmail / outlook / mailinator **返回同一个错误码 1351050** ⇒ 拒绝原因不是邮箱域 | ✅ 实测 | `fb_reg_protocol.md` §2.3 |
 | 10 | doc_id 可从前端 bundle 的 `*_facebookRelayOperation` 静态导出（本次提出 28 条） | ✅ 实测 | `apk/docids.py`、`data/graphql_docs.json` |
 
@@ -31,9 +31,10 @@
 - 假设：bundle 导出的 doc_id 与线上实际使用的操作错位
 - **验收**：用任意 doc_id + 任意 variables 让该端点返回 `data` 而非 error，并在仓库里留下可复现的请求样例
 
-### ② Bloks 确认请求里三个运行时值
-- 缺：`text_input_id`（形如 `8qm2kb:52`）、`__hs`、`__dyn`
-- **验收**：纯 Python 构造的请求返回非 500，并让 `GET /` 不再 302 到 `/confirmemail.php`
+### ② Bloks 确认后的业务状态
+- 现状：当前页 DATA 已恢复且 POST 返回非 500；后继状态为 checkpoint，确认结果仍未证明
+- **验收**：账号所有者正常手动完成安全检查后，只读核验同一账号是否离开
+  `/confirmemail.php` 与 `/checkpoint/`；不自动绕过安全检查
 
 ### ③ SSR → CSR 迁移边界
 - 现状：只确认了老 UA 能拿到表单；`mbasic` / `free` / `lite` 子域在老 UA 下的行为未系统测

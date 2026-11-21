@@ -135,7 +135,7 @@ doc_id 与线上实际使用的操作**不是同一个**（前端会同时发多
 
 ---
 
-## 5. 邮箱确认：Bloks 提交（结构已知，参数未完全对齐）
+## 5. 邮箱确认：Bloks 提交（结构已恢复，后继进入 checkpoint）
 
 🔶 抓到的真实请求形态（详见 `BLOKS_CONFIRM.md`）：
 
@@ -146,22 +146,24 @@ POST /async/wbloks/fetch/?appid=com.bloks.www.bloks.caa.reg.confirmation.async
 __user / __a / __req / __hs / dpr / __ccg / __rev / __s / __hsi / __dyn
 fb_dtsg=<token>:<ver>:<ts>     ← 必须带版本号与时间戳后缀
 jazoest / lsd
-params={"params":"{\"server_params\":{…,\"text_input_id\":\"8qm2kb:52\",
-        \"reg_info\":\"{…37 个字段…}\"}}"}
+form.params = JSON.stringify(DATA)
+DATA = {"params": JsonEncode({"server_params": {…},
+        "client_input_params": {"code": "<邮箱确认码>", …}})}
 ```
 
-✅ 实测的复现进度：
+✅ 实测的复现进度（一次受控提交）：
 
 | 阶段 | 结果 |
 |---|---|
 | 裸 `POST /confirmemail.php` | `1357004 Sorry, something went wrong` |
 | 补 `lsd` + `jazoest` | 仍 `1357004` |
 | 补 `fb_dtsg`（带 `:ver:ts`） | `1357004` 消失 → **HTTP 500** |
+| 当前页 action + 当前版本 + 纯 DSL 恢复的 DATA | **HTTP 200**；随后只读 `GET /` →302 `/checkpoint/…` |
 
-⇒ **CSRF 已通过**，卡在 `params` 的精确结构。缺三个运行时值：
-`text_input_id`（组件实例 ID）、`__hs`、`__dyn`。
-
-❓ 待研究：这三个值能否从 SSR 的 Lispy 树静态推出，还是必须由 JS 运行时生成。
+当前页面 DATA 可由白名单纯解释器恢复：本次路径 116 步、未知操作符 0，确认码位于
+`client_input_params.code`。HTTP 200 不等于确认成功；响应没有明确成功标志，后继状态为
+checkpoint，因此邮箱确认仍记为**未证明**。详见 `BLOKS_CONFIRM.md` 与
+`CHECKPOINT_FINDINGS.md`。
 
 ---
 
@@ -174,7 +176,7 @@ params={"params":"{\"server_params\":{…,\"text_input_id\":\"8qm2kb:52\",
 | 地理 | 出口 IP 国家 == SIM 国家 == `locale` / `timezone` | 🔶 字段语义推断 |
 | 设备 | 机型 ↔ build 指纹 ↔ 屏幕密度/分辨率 ↔ 运营商，必须成组自洽 | 🔶 字段语义推断 |
 | 会话 | `datr`/`fr`/`sb` 与后续请求同源 | ✅ 换 session 后状态不一致 |
-| 出口连续性 | 注册与后续操作**必须同出口**：换 IP 访问确认页直接跳 `/checkpoint/` | ✅ 见 §7 |
+| 出口连续性 | 历史样本中换 IP 后访问确认页落入 `/checkpoint/`；尚无单变量因果实验 | 🔶 见 §7 |
 | 域名 | 邮箱域需有 MX（否则 `USER_REGISTER_EMAIL_DOMAIN_NOT_MX=7`） | 🔶 错误码枚举 |
 
 ❓ **权重未知**：各维度在打分里占多少、阈值在哪，本项目**没有**做过对照实验，
@@ -182,7 +184,7 @@ params={"params":"{\"server_params\":{…,\"text_input_id\":\"8qm2kb:52\",
 
 ---
 
-## 7. 会话语义：出口连续性（✅ 最硬的结论之一）
+## 7. 会话语义：出口连续性的历史相关性（🔶 原因未定）
 
 ```
 注册出口 172.56.2.248（T-Mobile）
@@ -191,11 +193,9 @@ params={"params":"{\"server_params\":{…,\"text_input_id\":\"8qm2kb:52\",
   → 打开确认页 302 到 /checkpoint/1501092823525282/
 ```
 
-推论：**"先批量注册、回头统一验证"在物理上不成立**——不是因为风控策略，
-而是因为会话与出口被绑定，而这类代理的端口是短期的。
-
-这条结论对**正面用途**同样成立：任何需要"注册后立即操作"的自动化测试，
-都必须保证出口在会话周期内稳定。
+这个样本只证明“换出口”和 checkpoint 同时发生，不能证明前者是唯一原因。后续一次没有
+切换出口的确认请求也在状态检查时进入 checkpoint。因此应把 checkpoint 原因保留为未知，
+不能把 IP 当成已证实的单变量结论。
 
 ---
 
@@ -218,8 +218,8 @@ GET  /me                  同上，更敏感
 POST /api/graphql (me)    看响应里是否出现 requires_reauth
 ```
 
-❓ **未验证**：checkpoint 的触发时机（首次进 feed / 换环境登录 / 首个"有后果"动作 /
-延时抽查）来自观察与公开讨论，本项目未做对照实验。
+❓ **未验证**：checkpoint 的具体触发原因。当前只观察到一次确认 POST 后的只读状态检查
+跳转；没有访问 checkpoint 页面，也没有做 IP、邮箱或遥测字段的单变量对照实验。
 
 ⚠️ **研究边界**：checkpoint 里的证件/自拍验证由服务端与第三方完成，
 协议层没有可研究对象；本项目不涉及任何绕过尝试。

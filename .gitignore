@@ -20,3 +20,15 @@ apk/report/
 data/email.json
 data/proxies.txt
 data/phones.txt
+
+# 私密运行产物：即使复制进仓库也不得提交
+*_PRIVATE.*
+*PRIVATE*.json
+*PRIVATE*.txt
+*UNSAFE*.json
+*SESSION*.json
+*COOKIE*.json
+*OTP*.json
+account-attempt-*/
+mailbox-probe-*/
+proxy-egress-*/
