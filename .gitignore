@@ -1,0 +1,22 @@
+# 依赖与虚拟环境
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 运行时数据（含 cookies / 账号 / 抓包，绝不入库）
+data/
+!data/*.sample
+!data/graphql_docs.json
+
+# 抓包与报告产物
+apk/work/
+apk/report/
+*.flow
+*.png
+*.log
+
+# 本地配置
+data/email.json
+data/proxies.txt
+data/phones.txt
