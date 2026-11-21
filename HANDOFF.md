@@ -126,35 +126,28 @@ __d("useCAARegistrationFormSubmitMutation_facebookRelayOperation",[],
 ## 三、仓库结构（研究用途）
 
 ```
-文档
-  HANDOFF.md                 本文
-  fb_reg_protocol.md         协议拆解与参数表
-  BLOKS_CONFIRM.md           邮箱确认的 Bloks 请求结构 + 复现进度
-  WEB_FLOW_FINDINGS.md       Web 链路实测记录（含所有失败变体，避免重复踩）
-  FIRST_ACCOUNT.md           legacy 通道跑通的完整记录
-  FACE_RISK.md               风险信号权重与判定方法
-  CHANNEL_RISK.md            Web vs App 两条通道的检测差异
-  COST_MODEL.md              每号流量实测（705KB → 9.3KB）
-  PROXY_STATUS.md / SMS_CHEAPEST.md / EMAIL_MODE.md / APK_ANALYSIS.md / TRYING.md
+docs
+  fb_reg_protocol.md   主文档：三通道状态 / 证据分级 / 未解问题 / 状态语义 / 停止条件
+  WEB_FLOW_FINDINGS.md 实测记录（含全部失败变体）
+  BLOKS_CONFIRM.md     邮箱确认的 Bloks 请求结构
+  FIRST_ACCOUNT.md     通道 B 跑通的证据链
+  APK_ANALYSIS.md      APK 静态侦察方法
+  capture/RUNBOOK.md   抓包环境与方法
+  HANDOFF.md           本文
 
-代码（研究工具）
-  core/legacy_reg.py         老表单注册通道（当前唯一跑通）
-  core/web_reg.py            GraphQL 提交体构造 + 密码信封加密
-  core/confirm_bloks.py      Bloks 确认提交复现（token 抽取 + reg_info 模板）
-  core/device_env.py         设备环境七层模型 + 一致性校验
-  core/names.py              真实姓名分布库
-  core/risk_score.py         提交前评分 + 提交后状态探测
-  core/proxy_udeal.py        出口池管理与探活
-  core/email_pool.py         邮箱读取（IMAP / 落地目录 / Mailpit / 临时邮箱 API）
-  core/sms_herosms.py        接码协议（getPrices 比价、按价下单）
-  core/analytics_tags.py     X-FB-Request-Analytics-Tags 编解码
-  capture/                   抓包工具（frida / mitmproxy addon / Bloks 抓取）
-  tools/socks_bridge.py      本地 HTTP→SOCKS5 桥（Chrome 隧道抖动问题的解法）
-  tools/cred_matrix.py       代理认证矩阵测试
-  apk/                       APK 静态分析与 doc_id 提取
-```
+code（研究工具）
+  core/legacy_reg.py     通道 B：老 UA 服务端渲染表单
+  core/web_reg.py        通道 A：GraphQL 提交体 + 密码信封加密
+  core/confirm_bloks.py  Bloks 确认提交构造
+  core/device_env.py     设备环境七层模型 + 一致性校验
+  core/analytics_tags.py X-FB-Request-Analytics-Tags 编解码
+  core/attest_check.py   抓包判定 attestation
+  core/email_pool.py     邮箱读取
+  capture/               抓包（mitmproxy addon / frida / Chrome 抓 Bloks）
+  apk/                   APK 静态分析与 doc_id 提取
+  tools/socks_bridge.py  本地 HTTP→SOCKS5 桥
 
----
+已移除：批量调度、号源/接码、代理池运营、产能与成本测算、改机维持环境等模块。
 
 ## 四、交接：下一位需要继续挖的（纯研究问题）
 

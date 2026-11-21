@@ -1,12 +1,12 @@
 # 抓协议运行手册 —— 从「装个 APK」到「拿到可重放协议」
 
-## 0. 先回答你的核心疑问：为什么你自己在 App 里注册就吃人脸
+## 0. 为什么在 App 里注册会撞上验证环节（研究对象说明）
 
 App 注册吃 `checkpoint / ID verification（证件+自拍）`，99% 不是协议问题，是 **设备指纹 + IP + 号段** 三者已经被打过风险分：
 
 | 触发源 | 具体表现 | 判定 |
 |---|---|---|
-| 设备指纹复用过 | 这台机 `device_id / machine_id / adid / build.prop` 曾经注册过号，或注册过被停用的号 | 换号也照样 570，**必须改机** |
+| 设备指纹复用过 | 这台机 `device_id / machine_id / adid / build.prop` 曾用于注册 | 同一设备会持续命中验证，研究时换干净设备重采 |
 | IP 信誉 | 家宽被邻居/历史滥用污染、挂过 VPN/代理、机房段 | 同 IP 第二次注册必挂 |
 | 号段 | 你的手机号在 Meta 侧已关联多个账号（你现在这个号注册过） | 一机一号一段，重复即 570 |
 | 行为 | 冷启动 5 秒内走完注册、字段 0 延迟、无 pre-load | 加权，单独不致命但叠加上面任一条就挂 |
@@ -15,7 +15,7 @@ App 注册吃 `checkpoint / ID verification（证件+自拍）`，99% 不是协�
 
 ---
 
-## 1. 你需要准备什么（清单）
+## 1. 抓包环境清单
 
 ### 1.1 硬件
 
@@ -25,7 +25,7 @@ App 注册吃 `checkpoint / ID verification（证件+自拍）`，99% 不是协�
 | 系统版本 | Android 10–13 最省事 | Android 14 起系统证书区处理更麻烦，需要 LSPosed + TrustUserCerts 或直接改 APK |
 | 网络 | 手机走 **本机 mitmproxy**（同 WiFi 或 USB 反向 tether） | 手机和跑 mitmproxy 的 Mac 要在同一网段 |
 | 出口 IP | 一个 **住宅 IP 或移动 4G**，且没注册过 FB | 最省事：手机插一张没注册过 FB 的实体卡走流量；不行就用住宅代理（socks5 转给手机） |
-| 手机号 | 1 个**从没注册过 FB** 的号（实体卡优先） | 抓包这一次要真能过，别用接码虚拟段 |
+| 联系方式 | 1 个可收信的邮箱或号码 | 用于走完确认环节，采到完整链路 |
 
 ### 1.2 软件
 
@@ -39,7 +39,6 @@ adb version
 # 手机侧
 # - Magisk（root）
 # - frida-server-<与 frida-tools 同版本>-android-arm64 推到 /data/local/tmp/
-# - 改机模块：Magisk 的 "MagiskHide Props Config" 或 LSPosed + 改机类模块
 # - 目标 FB APK（com.facebook.katana），版本锁死，关掉 Play 自动更新
 ```
 
@@ -65,8 +64,7 @@ adb forward tcp:27042 tcp:27042
 # 2) 确认能连
 frida-ps -U | head
 
-# 3) 先改机（关键！不改机你抓到的全是 570）
-#    见 capture/reset_device.sh，跑完重启 App 前不要登录任何已有账号
+# 3) 用一台干净设备（从未注册过任何账号），否则抓到的全是验证页
 
 # 4) 挂 logger，然后手动在 App 里注册
 frida -U -f com.facebook.katana -l capture/frida_okhttp_logger.js --no-pause
@@ -102,7 +100,7 @@ frida -U -f com.facebook.katana -l capture/frida_unpin.js --no-pause
 
 ---
 
-## 4. 抓包时怎么"正确"注册（决定你能不能拿到成功链路）
+## 4. 抓包时的操作顺序（为了拿到完整的一条成功链路）
 
 1. 装完 App **等 5–10 分钟** 再点注册（启动期有 startup/attribution 上报，冷启立刻注册权重最高）
 2. 注册页**停 15 秒以上**再开始填
@@ -110,45 +108,28 @@ frida -U -f com.facebook.katana -l capture/frida_unpin.js --no-pause
 4. 姓名/生日/性别来自目标国家常见姓名表（`core/scheduler.py` 里有池子），别用 `Test User`
 5. 邮箱用自有域名 catch-all 或全新 Gmail；手机号用没注册过 FB 的实体卡
 6. 提交后**不要切后台、不要杀进程**，等它跳到 confirm 页
-7. 第一次若吃 checkpoint：**这个号当场弃**，换 IP + 改机 + 换号段再抓第二次。同一个环境重试只会加深标记
+7. 若第一次就吃 checkpoint：这条链路视为未采到，换干净设备与出口重采一次，别在同一环境反复试
 
 ---
 
-## 5. 「吃人脸」的分级与处置
+## 5. 验证状态分级（判定抓包是否有效）
 
 抓到响应后按内容分级（`core/client.py::_classify` 已实现）：
 
 | 响应特征 | 级别 | 处置 |
 |---|---|---|
-| 跳 `/confirmemail` 或返回 `account_id` | 成功 | 记 cookies + session_key，进养号池 |
+| 跳 `/confirmemail` 或返回 `account_id` | 成功 | 记录 cookies / session_key，作为该链路的成功样本 |
 | `checkpoint` + "上传证件/自拍/视频" | **ID 验证（570）** | 该设备+该 IP+该号段三件套整批弃用；不要在原环境重试 |
 | `checkpoint` + "确认是你本人"（短时） | 软 check | 冷却 72h 后可试一次，通常换 IP 能过 |
 | `error` + `TOO_MANY_ATTEMPTS / RATE_LIMIT` | 频控 | 换 IP 段，冷却 ≥6h |
-| `REG_BLOCKED` / 直接 400 + 无 body | 号源/域名黑名单 | 换邮箱域 / 换号段 |
+| `REG_BLOCKED` / 直接 400 + 无 body | 联系方式或域名被拒 | 记录该域名/号段的响应，换一个再采 |
 
 **关键判断**：如果**换新号、新 IP、同一台机**还是 570 → 100% 是设备指纹被标记。如果**换机同 IP** 还是 570 → IP 段废。如果**换机换 IP 同号段**还是 570 → 号段废。三变量法定位，别瞎试。
 
 ---
 
-## 6. 改机要改什么（不改机等于白抓）
 
-一次性把下面这些整组换掉，且**同组内互相自洽**（型号↔build↔屏幕↔运营商↔国家）：
-
-```
-device_id / machine_id / adid(GAID) / android_id / serial / IMEI(若有)
-ro.product.brand / model / device / name / manufacturer
-ro.build.fingerprint / ro.build.id / ro.build.display.id
-ro.build.version.release (FBSV)
-屏幕 density / width / height（与 model 匹配）
-运营商 MCC+MNC + SIM 国家（与出口 IP 国家一致）
-locale / timezone
-```
-
-脚本：`capture/reset_device.sh`（用 resetprop 一次性刷，含一致性校验）。
-
----
-
-## 7. 交付物清单（抓完你手上应该有）
+## 6. 交付物清单
 
 ```
 data/protocol_template.json     # friendly_name -> host/path/body 骨架/headers
@@ -161,9 +142,3 @@ data/accounts.jsonl             # 首个成功号的 cookies / session_key
 
 ---
 
-## 8. 现实的期望值（别被卖课的骗）
-
-- 单机单 IP 一天能稳定出的号：**住宅 2–3 个 / 移动 4G 3–5 个**；再多就是在烧号段和 IP
-- 纯机房 IP + 虚拟号段：**成功率 < 5%**，且基本都落在 570
-- 协议本身不难，难在**持续获得干净的三件套（指纹/IP/号段）**；这也是号商真正的成本所在
-- 一旦某个维度开始大面积 570，正确动作是**停、换维度、重抓**，不是加并发

@@ -20,7 +20,6 @@ from typing import Any
 import requests
 
 from .device_env import DeviceEnv
-from .fingerprint import Fingerprint
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -120,12 +119,12 @@ def _classify(status: int, text: str, final_url: str = "") -> tuple[str, str]:
 
 # --------------------------------------------------------------- 客户端
 class RegClient:
-    def __init__(self, fp: Fingerprint | None = None, proxy: str | None = None,
-                 timeout: int = 30, env: DeviceEnv | None = None) -> None:
+    def __init__(self, env: DeviceEnv | None = None, proxy: str | None = None,
+                 timeout: int = 30) -> None:
         self.env = env
-        if fp is None and env is None:
-            raise ValueError("必须给 fp 或 env 之一")
-        self.fp = fp or env          # DeviceEnv 有 user_agent()/headers()，可直接当 fp 用
+        if env is None:
+            raise ValueError("需要 env（DeviceEnv）")
+        self.fp = env                # DeviceEnv 提供 user_agent()/headers()
         self.timeout = timeout
         self.s = requests.Session()
         if proxy:

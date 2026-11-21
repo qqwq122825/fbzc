@@ -43,7 +43,10 @@ UA_LEGACY = ("Mozilla/5.0 (Linux; Android 4.4.2; Nexus 5) AppleWebKit/537.36 "
 REG_URL = "https://m.facebook.com/reg/"
 SUBMIT_PATH = "/reg/submit/"
 
-from core.names import generate as gen_name   # 真实姓名库：频率加权 + 性别一致 + 批内去重
+# 姓名：从实测表单里用的常见英文名中取，仅用于单次协议验证
+_FIRST_M = ["Michael", "Daniel", "James", "Christopher", "Andrew", "Thomas", "Robert"]
+_FIRST_F = ["Sarah", "Emily", "Laura", "Anna", "Rachel", "Michelle", "Helen"]
+_LAST = ["Wilson", "Anderson", "Thompson", "Robinson", "Clark", "Lewis", "Walker"]
 
 
 def _session(proxy: str | None) -> requests.Session:
@@ -108,10 +111,10 @@ def register(proxy: str | None, email: str, password: str, first: str = "", last
     """走 legacy 表单注册。返回 {ok, status, c_user, cookies, location, detail}"""
     s = _session(proxy)
     action, fields = fetch_form(s)
-    if not (first and last):
-        g_first, g_last = gen_name(country or "US", sex)
-        first = first or g_first
-        last = last or g_last
+    if not first:
+        first = random.choice(_FIRST_F if sex == 1 else _FIRST_M)
+    if not last:
+        last = random.choice(_LAST)
 
     fill = {
         "firstname": first, "lastname": last,

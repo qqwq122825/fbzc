@@ -138,7 +138,7 @@ print({k:v for k,v in b.items() if not k.startswith('_')})"
 python3 core/web_reg.py --dry
 ```
 
-差的只剩：**接码/邮箱号源** + **服务器公钥**。
+差的只剩：**一个可收信的联系方式** + **服务器公钥**。
 
 ---
 
@@ -184,7 +184,7 @@ POST https://www.facebook.com/api/graphql/   → 200
 
 变量形态（LocalArgument）：`{"args":{},"ig_age_data":null,"next_uri":"/","scale":1}`
 
-### 6.3 现在唯一缺的就是号源
+### 6.3 现在唯一缺的就是可收信的联系方式
 
 整条链已经齐了：代理 → 取态 → 公钥 → 密码加密 → 提交体。
 只差一个**没注册过 FB 的邮箱或手机号**填进 `contactpoint`。

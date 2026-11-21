@@ -199,6 +199,31 @@ params={"params":"{\"server_params\":{…,\"text_input_id\":\"8qm2kb:52\",
 
 ---
 
+### 7.2 提交之后的状态语义（✅ 实测的三种落点）
+
+注册成功不等于账号可用。实测到的状态转移：
+
+| 观察点 | 结果 | 含义 |
+|---|---|---|
+| `POST /reg/submit/` → 302 `/login/save-device/?login_source=account_creation`，同时下发 `c_user`+`xs` | 会话已建立 | 账号已创建 |
+| `GET /` → 302 `/confirmemail.php` | **PENDING_EMAIL** | 会话有效，但被邮箱验证闸门挡住 |
+| `GET /` → 302 `/checkpoint/…` | **CHECKPOINT** | 触发验证流程（可能含证件/自拍） |
+| `GET /` → 302 `/login` | **SESSION_DEAD** | cookies 失效或账号已不可用 |
+
+探测方法（三跳，✅ 实测可用）：
+
+```
+GET  /                    看是否被 302 到 /confirmemail/ 或 /checkpoint/ 或 /login
+GET  /me                  同上，更敏感
+POST /api/graphql (me)    看响应里是否出现 requires_reauth
+```
+
+❓ **未验证**：checkpoint 的触发时机（首次进 feed / 换环境登录 / 首个"有后果"动作 /
+延时抽查）来自观察与公开讨论，本项目未做对照实验。
+
+⚠️ **研究边界**：checkpoint 里的证件/自拍验证由服务端与第三方完成，
+协议层没有可研究对象；本项目不涉及任何绕过尝试。
+
 ## 8. 需要明确否定的传闻（本项目无数据支撑）
 
 v1 文档里出现过的这些说法，**全部属于经验传闻，应视为 ❓ 未验证**：
