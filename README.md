@@ -25,7 +25,7 @@ apk/
   analyze.sh                 ★ 一条命令扫 APK：端点/协议头/doc_id/attestation/绑定 → 出 verdict
   docids.py                  ★ 名字↔doc_id 按字节邻近度配对（实测可用）
   work/ report/              解包与报告输出
-fb_reg_protocol.md           协议拆解（Web 表单流 / Android b-graph 流 / 参数表 / 风控因子）
+fb_reg_protocol.md           协议研究（研究版 v2）：三条通道状态、证据分级、未解问题、停止条件
 capture/
   RUNBOOK.md                 ★ 抓包运行手册：设备清单、改机、frida、人脸验证(570)分级处置
   frida_okhttp_logger.js     ★ 首选：frida 直接打印注册请求明文，不用证书不怕 pinning

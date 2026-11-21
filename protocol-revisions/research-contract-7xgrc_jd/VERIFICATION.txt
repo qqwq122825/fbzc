@@ -1,0 +1,85 @@
+{
+  "TARGET": "/Users/xxx/Documents/fb注册/fb_reg_protocol.md",
+  "scope": "offline specification only; no live requests; runtime unchanged",
+  "changed_sections": [
+    "scope",
+    "evidence grading",
+    "confirmation semantics",
+    "stop transitions",
+    "sensitive-data handling",
+    "machine-readable contract"
+  ],
+  "changed_fields": [
+    "confirmed_requires",
+    "transitions",
+    "automatic_submission_retry",
+    "runtime_enforced"
+  ],
+  "baseline_sha256": "4a49af5d4a58ec91c96b263082206adc361c31ebc4993b4c658949728164e66a",
+  "modified_sha256": "d5704cdabe62af28e30f06555090c6028ff257d1b1d9285d72db01f06b44f0f1",
+  "rollback_sha256": "4a49af5d4a58ec91c96b263082206adc361c31ebc4993b4c658949728164e66a",
+  "original_unchanged": true,
+  "patch_reconstructs_exactly": true,
+  "roles": {
+    "MODIFIED_FILE": "/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/fb_reg_protocol.md",
+    "DIFF_FILE": "/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/DIFF.patch",
+    "VERIFICATION.txt": "/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/VERIFICATION.txt",
+    "ROLLBACK.sh": "/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/ROLLBACK.sh"
+  },
+  "ledger": [
+    {
+      "label": "BASELINE",
+      "command": "/opt/homebrew/opt/python@3.15/bin/python3.15 '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/check_protocol.py' '/Users/xxx/Documents/fb注册/fb_reg_protocol.md'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "FAIL: expected exactly one machine-readable protocol contract\n",
+      "stderr": "",
+      "exit_status": 1
+    },
+    {
+      "label": "MODIFIED",
+      "command": "/opt/homebrew/opt/python@3.15/bin/python3.15 '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/check_protocol.py' '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/fb_reg_protocol.md'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "PASS: protocol contract schema and safety invariants\nPASS: 16 transition cases; 9 states\nSCOPE: offline document checks only; runtime and live protocol not tested\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "label": "EXECUTE_ROLLBACK",
+      "command": "'/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/ROLLBACK.sh' '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/rollback-copy.md'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "RESTORED sha256=4a49af5d4a58ec91c96b263082206adc361c31ebc4993b4c658949728164e66a\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "label": "ROLLBACK",
+      "command": "/opt/homebrew/opt/python@3.15/bin/python3.15 '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/check_protocol.py' '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/rollback-copy.md'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "FAIL: expected exactly one machine-readable protocol contract\n",
+      "stderr": "",
+      "exit_status": 1
+    },
+    {
+      "label": "PATCH_RECONSTRUCTION",
+      "command": "/usr/bin/patch --batch -p1 -d '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/patch-check' -i '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/DIFF.patch'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "patching file fb_reg_protocol.md\n",
+      "stderr": "",
+      "exit_status": 0
+    },
+    {
+      "label": "ROLLBACK_SHELL_SYNTAX",
+      "command": "/bin/sh -n '/Users/xxx/Documents/fb注册/protocol-revisions/research-contract-7xgrc_jd/ROLLBACK.sh'",
+      "cwd": "/Users/xxx/Documents/fb注册",
+      "input": "document argument; stdin empty",
+      "stdout": "",
+      "stderr": "",
+      "exit_status": 0
+    }
+  ]
+}
