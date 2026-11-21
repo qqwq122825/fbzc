@@ -46,6 +46,12 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
 
+# apiok.us 临时邮箱（免费额度，公开 key，用于复现确认环节）
+# 文档: https://www.idatariver.com/project/temp-mail-api-cbea
+# 限速: 1 qps / 5 qpm —— 轮询间隔必须 ≥3s
+APIOK_BASE = "https://apiok.us/api/cbea"
+APIOK_KEY = "idr_85f1ad8109b15afab74d09d4286da3b8"
+
 # ---------------------------------------------------------------- FB 邮件解析
 CODE_PATTERNS = [
     r"\b(\d{5,8})\b",
@@ -307,9 +313,10 @@ class ApiOkReader(EmailReader):
     限速: 1 qps / 5 qpm → 轮询 ≥3s
     """
 
-    BASE = "https://apiok.us/api/cbea"
+    BASE = APIOK_BASE
 
-    def __init__(self, apikey: str, domain: str = "uselesss.org", interval: float = 3.0) -> None:
+    def __init__(self, apikey: str = APIOK_KEY, domain: str = "uselesss.org",
+                 interval: float = 3.0) -> None:
         self.key = apikey
         self.domain = domain
         self.interval = interval

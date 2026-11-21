@@ -58,6 +58,42 @@ python3 core/device_env.py                     # 设备环境一致性自检
 python3 core/attest_check.py <抓包日志>         # 判定有没有 attestation
 ```
 
+
+## 可直接用的公共资源（免费）
+
+### 临时邮箱 API（apiok.us / uselesss.org）
+
+用于复现"注册后收确认码"这一段，免费额度，无需自建邮件服务器。
+
+```
+# 1) 随机生成一个邮箱
+GET https://apiok.us/api/cbea/generate/v1?apikey=<KEY>&type=email
+→ {"code":0,"result":{"id":"<邮箱地址的 base64>","email":"xxxx@uselesss.org"},"credits":0.0}
+
+# 2) 邮件列表（注意：id 必须是上一步返回的 base64，不是邮箱地址）
+GET https://apiok.us/api/cbea/messages/v1?apikey=<KEY>&id=<base64>
+→ {"code":0,"result":{"messages":[{"id":"…","from":"registration@facebookmail.com",
+                                    "subject":"FB-xxxxx is your confirmation code","time":…}]}}
+
+# 3) 邮件正文
+GET https://apiok.us/api/cbea/message/detail/v1?apikey=<KEY>&id=<消息id>
+```
+
+- KEY：`idr_85f1ad8109b15afab74d09d4286da3b8`（已内置在 `core/email_pool.py::APIOK_KEY`）
+- 限速：**1 qps / 5 qpm** → 轮询间隔必须 ≥3 秒
+- 错误码：`1001` 缺参/参数错、`1005` 额度不足
+
+```bash
+python3 -c "from core.email_pool import ApiOkReader; r=ApiOkReader(); print(r.generate())"
+```
+
+### 住宅 SOCKS5 出口
+
+抓包和复现需要一个与目标国家一致的住宅出口；`tools/socks_bridge.py` 可以把本地
+HTTP 代理桥到上游 SOCKS5（Chrome 直连 socks5 会因隧道抖动报
+`ERR_TIMED_OUT` / `ERR_NETWORK_CHANGED`）。
+
+---
 ## 边界
 
 - 不建账号生产流水线，不采购号源，不做产能规划
